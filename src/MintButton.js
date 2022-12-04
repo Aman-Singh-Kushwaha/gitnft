@@ -1,5 +1,44 @@
 import * as React from 'react'
 import { usePrepareContractWrite, useContractWrite, useWaitForTransaction,} from 'wagmi'
+import * as PushAPI from "@pushprotocol/restapi";
+import * as ethers from "ethers";
+import Web3 from 'web3';
+var web3 = new Web3();
+
+
+const PK = "13c090b69bedb4587ae87f0ae37596fd51fcb20f40036f0596313e49352ed9e3"; // channel private key
+const Pkey = `0x${PK}`;
+const signer = new ethers.Wallet(Pkey);
+
+const sendNotification = async() => {
+  try {
+    const apiResponse = await PushAPI.payloads.sendNotification({
+      signer,
+      type: 3, // target
+      identityType: 2, // direct payload
+      notification: {
+        title: `Mint Alert !:`,
+        body: `You have Successfully Minted your gitNFT`
+      },
+      payload: {
+        title: `Mint Alert!`,
+        body: `You have Successfully Minted your gitNFT`,
+        cta: '',
+        img: ''
+      },
+    //   recipients: 'eip155:5:0xCdBE6D076e05c5875D90fa35cc85694E1EAFBBd1', // recipient address
+      recipients: web3.eth.getAccounts(), // recipient address
+      channel: 'eip155:5:0xEe9e22b3C8c22C0E62BD2fa5a1c78992D00be672', // your channel address
+      env: 'staging'
+    });
+    
+    // apiResponse?.status === 204, if sent successfully!
+    console.log('API repsonse: ', apiResponse);
+  } catch (err) {
+    console.error('Error: ', err);
+  }
+}
+
  
 export function MintNFT() {
     const { config } = usePrepareContractWrite({
@@ -439,17 +478,18 @@ export function MintNFT() {
       })
   return (
     <div>
- <button disabled={!write || isLoading} onClick={() => write()}>
-        {isLoading ? 'Minting...' : 'Mint'}
-      </button>
-      {isSuccess && (
-        <div>
-          Successfully minted your NFT!
-          <div>
-            <a href={`https://etherscan.io/tx/${data?.hash}`}>Etherscan</a>
-          </div>
-        </div>
-      )}
-          </div>
+        <button disabled={!write || isLoading} onClick={() => write()}>
+            {isLoading ? 'Minting...' : 'Mint'}
+        </button>
+        {isSuccess && (
+            <div>
+                Successfully minted your NFT!
+                {sendNotification}
+                <div>
+                    <a href={`https://etherscan.io/tx/${data?.hash}`}>Etherscan</a>
+                </div>
+            </div>
+        )}
+    </div>
   )
 }
